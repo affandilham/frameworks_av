@@ -206,6 +206,16 @@ AudioPolicyMixCollection::MixMatchStatus AudioPolicyMixCollection::mixMatch(
         const audio_config_base_t& config, uid_t uid) {
 
     if (mix->mMixType == MIX_TYPE_PLAYERS) {
+
+        // Permit match only if requested format and mix format are PCM and can be format
+        // adapted by the mixer, or are the same (compressed) format.
+        if (!is_mix_loopback(mix->mRouteFlags) &&
+            !((audio_is_linear_pcm(config.format) && audio_is_linear_pcm(mix->mFormat.format)) ||
+              (config.format == mix->mFormat.format)) &&
+              config.format != AUDIO_CONFIG_BASE_INITIALIZER.format) {
+            return MixMatchStatus::NO_MATCH;
+        }
+
         int userId = (int) multiuser_get_user_id(uid);
 
         // TODO if adding more player rules (currently only 2), make rule handling "generic"
